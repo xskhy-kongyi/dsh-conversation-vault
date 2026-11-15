@@ -46,6 +46,14 @@ dsh plugin --profile <profile> add github:kongyi-XZH/dsh-conversation-vault
 - HTTP 路由只监听本机，未额外鉴权。
 - 记忆卡没有硬性字数上限，但单张过长会占用模型上下文；建议主卡精炼、细节放附录。
 
+## 和相似插件的区别
+
+- **dsh-session-vault**：在**设置页**里列出并删除已归档/空白会话，只有“删”这一个动作，没有收起、恢复、侧栏面板，也没有记忆卡。
+- **dsh-vault**：加密凭据保险库（密码 / TOTP / API key），与本插件无关。
+- **dsh-memory-vault**：跨会话记忆**条目**（手动 `remember` / `recall` / `forget` + 每轮注入），不做对话蒸馏，也不管理会话。
+
+本插件的差异：**侧栏面板 + 会话右键菜单**里完成“收起 / 恢复 / 重命名 / 删除 / 蒸馏成记忆卡”，删除只动对话记录。
+
 ## 许可
 
 MIT
