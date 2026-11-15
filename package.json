@@ -1,0 +1,52 @@
+{
+  "name": "@kongyi/dsh-session-vault",
+  "version": "1.0.0",
+  "description": "Session vault for DeepSeek Harness: tuck conversations out of a workspace, manage archived ones in one panel, delete just the conversation log (never files), and distill long sessions into editable memory cards any later session can read. · 会话仓库：收起没用的对话、集中管理归档、只删对话不动文件，并把长对话蒸馏成可被后续会话读取的记忆卡。",
+  "type": "module",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kongyi/dsh-session-vault.git"
+  },
+  "homepage": "https://github.com/kongyi/dsh-session-vault#readme",
+  "bugs": {
+    "url": "https://github.com/kongyi/dsh-session-vault/issues"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale",
+    "docs",
+    "icon.svg",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "deepseek",
+    "harness",
+    "dsh",
+    "dsh-plugin",
+    "session",
+    "archive",
+    "memory",
+    "distill"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  }
+}

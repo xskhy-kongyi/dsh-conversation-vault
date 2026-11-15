@@ -1,0 +1,4 @@
+- insert:
+    - id: session-vault
+      name: '@kongyi/dsh-session-vault'
+      config: {}

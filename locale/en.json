@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "Session vault",
+    "description": "Tuck unneeded conversations out of every workspace, find them again in one panel, restore them, or delete just the conversation log. Archived conversations are managed here too, grouped by workspace.",
+    "detail": "docs/DETAIL.md"
+  }
+}

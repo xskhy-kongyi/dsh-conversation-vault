@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Session vault">
+  <rect x="6" y="18" width="52" height="34" rx="6" fill="#2f6fa8" />
+  <path d="M6 24 12 12a6 6 0 0 1 5.4-3.4h29.2A6 6 0 0 1 52 12l6 12z" fill="#4a8fc7" />
+  <rect x="22" y="30" width="20" height="4.5" rx="2.2" fill="#e8f2fb" />
+  <rect x="26" y="40" width="12" height="3" rx="1.5" fill="#b9d6ee" />
+</svg>
