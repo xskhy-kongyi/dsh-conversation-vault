@@ -7,7 +7,7 @@
 | 项 | 值 |
 |---|---|
 | npm 包名 / 仓库名 | `dsh-conversation-vault`（无 scope，npm 上已确认可用） |
-| GitHub 仓库 | `https://github.com/kongyi-XZH/dsh-conversation-vault` |
+| GitHub 仓库 | `https://github.com/xskhy-kongyi/dsh-conversation-vault` |
 | 插件行 id | `session-vault`（内部，不变） |
 
 > 备选：`dsh-session-vault` / `dsh-vault` / `dsh-memory-vault` 都已被别人占用。
@@ -22,7 +22,7 @@
 
 ```powershell
 cd E:\文件\DSH_TUOZHAN\dsh-session-vault
-git remote add origin https://github.com/kongyi-XZH/dsh-conversation-vault.git
+git remote add origin https://github.com/xskhy-kongyi/dsh-conversation-vault.git
 git push -u origin main
 ```
 
@@ -45,8 +45,8 @@ npm publish --access public
 ## 5. 提交市场 PR
 
 1. Fork <https://github.com/awesome-dsh-plugin/awesome-dsh-plugin>
-2. 新增 `data/plugins/kongyi-XZH__dsh-conversation-vault.yml`
-3. 内容复制 `E:\文件\DSH_TUOZHAN\market\kongyi-XZH__dsh-conversation-vault.yml`
+2. 新增 `data/plugins/xskhy-kongyi__dsh-conversation-vault.yml`
+3. 内容复制 `E:\文件\DSH_TUOZHAN\market\xskhy-kongyi__dsh-conversation-vault.yml`
 4. 提 PR，标题：`Add dsh-conversation-vault`
 
 ## 可能被人工复核的点

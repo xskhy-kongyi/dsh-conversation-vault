@@ -19,7 +19,7 @@
 dsh plugin --profile <profile> add dsh-conversation-vault
 
 # 或直接从 GitHub
-dsh plugin --profile <profile> add github:kongyi-XZH/dsh-conversation-vault
+dsh plugin --profile <profile> add github:xskhy-kongyi/dsh-conversation-vault
 ```
 
 安装后：

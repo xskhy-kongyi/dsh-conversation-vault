@@ -6,11 +6,11 @@
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kongyi-XZH/dsh-conversation-vault.git"
+    "url": "git+https://github.com/xskhy-kongyi/dsh-conversation-vault.git"
   },
-  "homepage": "https://github.com/kongyi-XZH/dsh-conversation-vault#readme",
+  "homepage": "https://github.com/xskhy-kongyi/dsh-conversation-vault#readme",
   "bugs": {
-    "url": "https://github.com/kongyi-XZH/dsh-conversation-vault/issues"
+    "url": "https://github.com/xskhy-kongyi/dsh-conversation-vault/issues"
   },
   "exports": {
     ".": "./index.js",
