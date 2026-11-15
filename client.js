@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Client half of the session vault.
  *
  * Actions ride the shell's own context menu (`ctx.contextMenus`): a data
@@ -7,7 +7,7 @@
  * belongs to. The page is the only custom surface.
  */
 window.__ModuleLoader__.load({
-  id: '@kongyi/dsh-session-vault',
+  id: 'dsh-conversation-vault',
   factory(require) {
     const React = require('react')
     const { createPortal } = require('react-dom')
@@ -15,7 +15,7 @@ window.__ModuleLoader__.load({
     const { useCallback, useEffect, useRef, useState } = React
 
     const PANEL_ID = 'session-vault'
-    const API = '/dsh-session-vault/api'
+    const API = '/dsh-conversation-vault/api'
 
     /** Shown at the bottom of the page so users can find the author. */
     const AUTHOR = {

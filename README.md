@@ -16,10 +16,10 @@
 
 ```sh
 # 从 npm
-dsh plugin --profile <profile> add @kongyi/dsh-session-vault
+dsh plugin --profile <profile> add dsh-conversation-vault
 
 # 或直接从 GitHub
-dsh plugin --profile <profile> add github:kongyi/dsh-session-vault
+dsh plugin --profile <profile> add github:kongyi-XZH/dsh-conversation-vault
 ```
 
 安装后：

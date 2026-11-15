@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Host half of the session vault.
  *
  * Three jobs:
@@ -14,7 +14,7 @@ import { dirname, join, basename } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { homedir } from 'node:os'
 
-const API = '/dsh-session-vault/api'
+const API = '/dsh-conversation-vault/api'
 
 /**
  * Cards are user data, so they live in the Harness home rather than inside the
