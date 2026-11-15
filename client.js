@@ -21,8 +21,7 @@ window.__ModuleLoader__.load({
     const AUTHOR = {
       name: '相思空何意',
       site: 'Bilibili',
-      // Replace with https://space.bilibili.com/<uid> once the uid is known.
-      url: 'https://search.bilibili.com/all?keyword=%E7%9B%B8%E6%80%9D%E7%A9%BA%E4%BD%95%E6%84%8F',
+      url: 'https://space.bilibili.com/1317598808',
     }
 
     /** Client services captured at apply time. */

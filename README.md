@@ -52,6 +52,6 @@ MIT
 
 ## 作者
 
-**相思空何意** · Bilibili：<https://search.bilibili.com/all?keyword=%E7%9B%B8%E6%80%9D%E7%A9%BA%E4%BD%95%E6%84%8F>
+**相思空何意** · Bilibili：<https://space.bilibili.com/1317598808>
 
 插件页面底部也有同一个入口。
