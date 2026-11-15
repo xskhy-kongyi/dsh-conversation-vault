@@ -17,6 +17,14 @@ window.__ModuleLoader__.load({
     const PANEL_ID = 'session-vault'
     const API = '/dsh-session-vault/api'
 
+    /** Shown at the bottom of the page so users can find the author. */
+    const AUTHOR = {
+      name: '相思空何意',
+      site: 'Bilibili',
+      // Replace with https://space.bilibili.com/<uid> once the uid is known.
+      url: 'https://search.bilibili.com/all?keyword=%E7%9B%B8%E6%80%9D%E7%A9%BA%E4%BD%95%E6%84%8F',
+    }
+
     /** Client services captured at apply time. */
     let services = null
 
@@ -30,6 +38,7 @@ window.__ModuleLoader__.load({
         failed: '读取失败：{error}',
         failure: '操作失败：{error}',
         dismiss: '知道了',
+        authorLabel: '作者',
         errRunning: '这个对话正在跑一个回合（或在等你回答），先停掉它再操作。',
         deleteDoneLive: '已删除「{name}」。那个对话窗口还开着的话，请刷新页面。',
         deletedLiveHint: '已删除。如果那个对话窗口还开着，刷新页面即可。',
@@ -97,6 +106,7 @@ window.__ModuleLoader__.load({
         failed: 'Could not load: {error}',
         failure: 'Failed: {error}',
         dismiss: 'Dismiss',
+        authorLabel: 'By',
         errRunning: 'This conversation is running a turn (or waiting for your answer); stop it first.',
         deleteDoneLive: 'Deleted “{name}”. If that conversation window is still open, refresh the page.',
         deletedLiveHint: 'Deleted. If that conversation window is still open, refresh the page.',
@@ -378,6 +388,10 @@ window.__ModuleLoader__.load({
   color: var(--dsw-alias-label-secondary); border: 1px dashed var(--dsw-alias-border-l1);
   border-radius: 10px; margin-bottom: 22px; }
 .dsv-note { font-size: 12px; line-height: 1.6; color: var(--dsw-alias-label-secondary); max-width: 780px; }
+.dsv-author { margin: 28px 0 8px; padding-top: 14px; max-width: 980px; font-size: 12px;
+  color: var(--dsw-alias-label-secondary); border-top: 1px solid var(--dsw-alias-border-l1); }
+.dsv-author-link { color: var(--dsw-alias-brand-primary); text-decoration: none; }
+.dsv-author-link:hover { text-decoration: underline; }
 .dsv-warn { font-size: 12px; margin: 0 0 12px; color: var(--dsw-alias-state-error-primary); }
 .dsv-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; max-width: 980px;
   margin: 0 0 16px; padding: 10px 14px; font-size: 12px; border-radius: 10px;
@@ -1071,6 +1085,17 @@ window.__ModuleLoader__.load({
         noticeNode,
         pickerNode,
         body,
+        h(
+          'p',
+          { className: 'dsv-author' },
+          t('authorLabel') + ' ',
+          h(
+            'a',
+            { href: AUTHOR.url, target: '_blank', rel: 'noreferrer noopener', className: 'dsv-author-link' },
+            AUTHOR.name,
+          ),
+          ' · ' + AUTHOR.site,
+        ),
         dialogNode,
       )
     }
