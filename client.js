@@ -39,7 +39,7 @@ window.__ModuleLoader__.load({
         dismiss: '知道了',
         authorLabel: '作者',
         errRunning: '这个对话正在跑一个回合（或在等你回答），先停掉它再操作。',
-        deletedSidebarHint: '已删除。侧栏如果还残留一条「未分组」的旧记录，点右边按钮刷新即可消失。',
+        deletedReloading: '已删除，正在刷新页面…',
         reload: '刷新页面',
         reloadPage: '重新加载页面',
         trashSection: '刚删掉的记忆卡（可恢复）',
@@ -110,7 +110,7 @@ window.__ModuleLoader__.load({
         dismiss: 'Dismiss',
         authorLabel: 'By',
         errRunning: 'This conversation is running a turn (or waiting for your answer); stop it first.',
-        deletedSidebarHint: 'Deleted. If the sidebar still shows it under Ungrouped, use the button on the right to refresh.',
+        deletedReloading: 'Deleted. Reloading the page…',
         reload: 'Refresh page',
         reloadPage: 'Reload page',
         trashSection: 'Recently deleted cards (restorable)',
@@ -347,6 +347,9 @@ window.__ModuleLoader__.load({
                   run: () => window.location.reload(),
                   failureLabel: t('reload'),
                 })
+                // The sidebar keeps its own copy of the row until the page
+                // reloads, so reload right away instead of leaving a stale row.
+                setTimeout(() => window.location.reload(), 900)
               },
               failureLabel: t('menuDeleteFailed'),
             },
@@ -668,7 +671,8 @@ window.__ModuleLoader__.load({
           }
           await post(API + '/delete', { sessionId: row.id })
           await load()
-          setNotice({ text: t('deletedSidebarHint'), action: { label: t('reload'), run: () => window.location.reload() } })
+          setNotice({ text: t('deletedReloading') })
+          setTimeout(() => window.location.reload(), 900)
         } catch (problem) {
           setNotice({ text: describeError(problem) })
         } finally {
@@ -699,7 +703,8 @@ window.__ModuleLoader__.load({
         } finally {
           setBusy('')
           await load()
-          setNotice({ text: t('deletedSidebarHint'), action: { label: t('reload'), run: () => window.location.reload() } })
+          setNotice({ text: t('deletedReloading') })
+          setTimeout(() => window.location.reload(), 900)
         }
       }
 

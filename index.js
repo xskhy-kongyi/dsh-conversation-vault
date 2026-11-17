@@ -858,9 +858,11 @@ export function apply(ctx) {
           error: 'this session has forked children',
         })
       }
-      // Validate everything BEFORE detaching: a failure after the detach used to
-      // leave the session in no workspace, which the sidebar renders as an
-      // orphaned "Ungrouped" row.
+      // Deliberately no detach here. Detaching first is what made a deleted
+      // conversation reappear in the sidebar's "Ungrouped" section: the client
+      // keeps the row until it reloads, and with no workspace left to claim it
+      // the row has nowhere to go. Removing only the log directory lets the
+      // official list drop it (a workspace prunes ids whose session is gone).
       const location = snapshot.location
       const target = location && location.path
       if (!target) return sendJson(response, 409, { ok: false, error: 'no storage location for this session' })
@@ -868,18 +870,12 @@ export function apply(ctx) {
       if (!pathKey(target).includes(String(sessionId).toLowerCase())) {
         return sendJson(response, 409, { ok: false, error: 'storage path failed validation' })
       }
-      const holders = ctx.workspaceRegistry
-        .list()
-        .filter((workspace) => (workspace.sessionIds ?? []).some((id) => String(id) === String(sessionId)))
-      for (const workspace of holders) await workspace.detachSession(sessionId)
       try {
         const info = await stat(target)
         await rm(target, { recursive: info.isDirectory(), force: true, maxRetries: 2 })
       } catch (error) {
-        // Put it back where it came from so nothing is left half-deleted.
-        for (const workspace of holders) {
-          await workspace.attachSession(sessionId).catch(() => {})
-        }
+        // Nothing was detached, so there is nothing to roll back: the session
+        // simply stays where it is and the caller reports the failure.
         return sendJson(response, 500, { ok: false, code: 'delete-failed', error: messageOf(error) })
       }
       sendJson(response, 200, { ok: true, hadLiveOwner })
