@@ -42,6 +42,8 @@ window.__ModuleLoader__.load({
         deletedSidebarHint: '已删除。侧栏如果还残留一条「未分组」的旧记录，点右边按钮刷新即可消失。',
         reload: '刷新页面',
         reloadPage: '重新加载页面',
+        trashSection: '刚删掉的记忆卡（可恢复）',
+        trashRestored: '已恢复「{title}」',
         errChildren: '这个对话还有 {n} 个分叉出来的子对话，请先删除它们。',
         errMissing: '这个对话已经不存在了。',
         errNotAttached: '这个对话不属于任何工作区，不需要收起。',
@@ -111,6 +113,8 @@ window.__ModuleLoader__.load({
         deletedSidebarHint: 'Deleted. If the sidebar still shows it under Ungrouped, use the button on the right to refresh.',
         reload: 'Refresh page',
         reloadPage: 'Reload page',
+        trashSection: 'Recently deleted cards (restorable)',
+        trashRestored: 'Restored “{title}”',
         errChildren: 'This conversation has {n} forked child conversation(s); delete those first.',
         errMissing: 'That conversation no longer exists.',
         errNotAttached: 'That conversation belongs to no workspace, so there is nothing to tuck away.',
@@ -500,6 +504,7 @@ window.__ModuleLoader__.load({
       const [phase, setPhase] = useState('loading')
       const [items, setItems] = useState([])
       const [digests, setDigests] = useState([])
+      const [trash, setTrash] = useState([])
       const [expanded, setExpanded] = useState('')
       const [editingId, setEditingId] = useState('')
       const [draft, setDraft] = useState({ title: '', body: '' })
@@ -542,6 +547,12 @@ window.__ModuleLoader__.load({
             if (mounted.current) setDigests(Array.isArray(cards.items) ? cards.items : [])
           } catch {
             if (mounted.current) setDigests([])
+          }
+          try {
+            const bin = await call(API + '/digests/trash')
+            if (mounted.current) setTrash(Array.isArray(bin.items) ? bin.items : [])
+          } catch {
+            if (mounted.current) setTrash([])
           }
         } catch (problem) {
           if (!mounted.current) return
@@ -1068,6 +1079,51 @@ window.__ModuleLoader__.load({
                 digests.length === 0
                   ? h('div', { className: 'dsv-empty' }, t('cardEmpty'))
                   : h('div', { className: 'dsv-list' }, digests.map(renderCard)),
+                trash.length
+                  ? h(
+                      'div',
+                      {},
+                      h(
+                        'div',
+                        { className: 'dsv-section-head', style: { marginTop: 18 } },
+                        h('span', { className: 'dsv-section-title' }, t('trashSection')),
+                        h('span', { className: 'dsv-section-count' }, t('count', { n: trash.length })),
+                      ),
+                      h(
+                        'div',
+                        { className: 'dsv-list' },
+                        trash.map((entry) =>
+                          h(
+                            'div',
+                            { className: 'dsv-row', key: entry.file },
+                            h(
+                              'div',
+                              { className: 'dsv-row-main' },
+                              h('div', { className: 'dsv-row-title' }, entry.title || t('untitled')),
+                              h('div', { className: 'dsv-row-meta' }, entry.excerpt || ''),
+                            ),
+                            h(
+                              'button',
+                              {
+                                type: 'button',
+                                className: 'dsv-btn',
+                                onClick: async () => {
+                                  try {
+                                    await post(API + '/digests/trash/restore', { file: entry.file })
+                                    await load()
+                                    setNotice({ text: t('trashRestored', { title: entry.title || t('untitled') }) })
+                                  } catch (problem) {
+                                    setNotice({ text: describeError(problem) })
+                                  }
+                                },
+                              },
+                              t('restore'),
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                  : null,
               )
 
       return h(

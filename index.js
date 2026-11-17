@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Host half of the session vault.
  *
  * Three jobs:
@@ -9,7 +9,7 @@
  *
  * Cards are the only state this plugin owns, and they live beside the package.
  */
-import { rm, stat, mkdir, readFile, writeFile, readdir, unlink } from 'node:fs/promises'
+import { rm, stat, mkdir, readFile, writeFile, readdir, unlink, rename } from 'node:fs/promises'
 import { dirname, join, basename } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { homedir } from 'node:os'
@@ -141,15 +141,103 @@ async function loadCards() {
   return cards
 }
 
+const BACKUP_DIR = join(CARD_DIR, '.backup')
+const TRASH_DIR = join(CARD_DIR, '.trash')
+const BACKUPS_PER_CARD = 5
+const TRASH_LIMIT = 40
+
+function stamp() {
+  return new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 14)
+}
+
+/** Keep the previous version before an overwrite, pruned to the newest few. */
+async function backupCard(id, text) {
+  try {
+    await mkdir(BACKUP_DIR, { recursive: true })
+    await writeFile(join(BACKUP_DIR, `${id}-${stamp()}.md`), text, 'utf8')
+    const names = (await readdir(BACKUP_DIR))
+      .filter((name) => name.startsWith(`${id}-`) && name.endsWith('.md'))
+      .sort()
+    for (const name of names.slice(0, Math.max(0, names.length - BACKUPS_PER_CARD))) {
+      await unlink(join(BACKUP_DIR, name)).catch(() => {})
+    }
+  } catch {
+    // A failed backup must never block the save.
+  }
+}
+
 async function writeCard(card) {
   await mkdir(CARD_DIR, { recursive: true })
-  await writeFile(join(CARD_DIR, `${card.id}.md`), serializeCard(card), 'utf8')
+  const target = join(CARD_DIR, `${card.id}.md`)
+  try {
+    await backupCard(card.id, await readFile(target, 'utf8'))
+  } catch {
+    // First write: there is no previous version.
+  }
+  await writeFile(target, serializeCard(card), 'utf8')
   return card
 }
 
+async function pruneTrash() {
+  try {
+    const names = (await readdir(TRASH_DIR)).filter((name) => name.endsWith('.md')).sort()
+    for (const name of names.slice(0, Math.max(0, names.length - TRASH_LIMIT))) {
+      await unlink(join(TRASH_DIR, name)).catch(() => {})
+    }
+  } catch {
+    // Trimming is best effort.
+  }
+}
+
+/** Deleting a card moves it to the trash instead of unlinking it. */
 async function deleteCard(id) {
   try {
-    await unlink(join(CARD_DIR, `${id}.md`))
+    await mkdir(TRASH_DIR, { recursive: true })
+    await rename(join(CARD_DIR, `${id}.md`), join(TRASH_DIR, `${id}-${stamp()}.md`))
+    await pruneTrash()
+    return true
+  } catch {
+    return false
+  }
+}
+
+const trashId = (file) => String(file).replace(/-\d{14}\.md$/, '')
+
+async function loadTrash() {
+  let names = []
+  try {
+    names = await readdir(TRASH_DIR)
+  } catch {
+    return []
+  }
+  const items = []
+  for (const name of names) {
+    if (!name.endsWith('.md')) continue
+    try {
+      const card = parseCard(await readFile(join(TRASH_DIR, name), 'utf8'), trashId(name))
+      items.push({
+        file: name,
+        id: card.id,
+        title: card.title,
+        workspace: card.workspace,
+        updated: card.updated,
+        excerpt: clamp(card.body, 120),
+      })
+    } catch {
+      // A broken trash entry must not break the list.
+    }
+  }
+  items.sort((a, b) => String(b.updated).localeCompare(String(a.updated)))
+  return items
+}
+
+async function restoreTrash(file) {
+  const safe = basename(String(file || ''))
+  if (!safe.endsWith('.md')) return false
+  try {
+    const card = parseCard(await readFile(join(TRASH_DIR, safe), 'utf8'), trashId(safe))
+    await writeCard({ ...card, updated: new Date().toISOString() })
+    await unlink(join(TRASH_DIR, safe))
     return true
   } catch {
     return false
@@ -658,6 +746,25 @@ export function apply(ctx) {
     }
   })
 
+  route(`${API}/digests/trash`, async (request, response) => {
+    try {
+      sendJson(response, 200, { ok: true, items: await loadTrash() })
+    } catch (error) {
+      sendJson(response, 500, { ok: false, error: messageOf(error) })
+    }
+  })
+
+  route(`${API}/digests/trash/restore`, async (request, response) => {
+    if (request.method !== 'POST') return sendJson(response, 405, { ok: false, error: 'POST only' })
+    const { file } = await readJson(request)
+    if (!file) return sendJson(response, 400, { ok: false, error: 'missing file' })
+    try {
+      sendJson(response, 200, { ok: true, restored: await restoreTrash(String(file)) })
+    } catch (error) {
+      sendJson(response, 500, { ok: false, error: messageOf(error) })
+    }
+  })
+
   route(`${API}/hide`, async (request, response) => {
     if (request.method !== 'POST') return sendJson(response, 405, { ok: false, error: 'POST only' })
     const { sessionId } = await readJson(request)
@@ -751,7 +858,9 @@ export function apply(ctx) {
           error: 'this session has forked children',
         })
       }
-      await detachEverywhere(sessionId)
+      // Validate everything BEFORE detaching: a failure after the detach used to
+      // leave the session in no workspace, which the sidebar renders as an
+      // orphaned "Ungrouped" row.
       const location = snapshot.location
       const target = location && location.path
       if (!target) return sendJson(response, 409, { ok: false, error: 'no storage location for this session' })
@@ -759,8 +868,20 @@ export function apply(ctx) {
       if (!pathKey(target).includes(String(sessionId).toLowerCase())) {
         return sendJson(response, 409, { ok: false, error: 'storage path failed validation' })
       }
-      const info = await stat(target)
-      await rm(target, { recursive: info.isDirectory(), force: true, maxRetries: 2 })
+      const holders = ctx.workspaceRegistry
+        .list()
+        .filter((workspace) => (workspace.sessionIds ?? []).some((id) => String(id) === String(sessionId)))
+      for (const workspace of holders) await workspace.detachSession(sessionId)
+      try {
+        const info = await stat(target)
+        await rm(target, { recursive: info.isDirectory(), force: true, maxRetries: 2 })
+      } catch (error) {
+        // Put it back where it came from so nothing is left half-deleted.
+        for (const workspace of holders) {
+          await workspace.attachSession(sessionId).catch(() => {})
+        }
+        return sendJson(response, 500, { ok: false, code: 'delete-failed', error: messageOf(error) })
+      }
       sendJson(response, 200, { ok: true, hadLiveOwner })
     } catch (error) {
       sendJson(response, 500, { ok: false, error: messageOf(error) })
