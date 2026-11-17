@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Client half of the session vault.
  *
  * Actions ride the shell's own context menu (`ctx.contextMenus`): a data
@@ -39,8 +39,9 @@ window.__ModuleLoader__.load({
         dismiss: '知道了',
         authorLabel: '作者',
         errRunning: '这个对话正在跑一个回合（或在等你回答），先停掉它再操作。',
-        deleteDoneLive: '已删除「{name}」。那个对话窗口还开着的话，请刷新页面。',
-        deletedLiveHint: '已删除。如果那个对话窗口还开着，刷新页面即可。',
+        deletedSidebarHint: '已删除。侧栏如果还残留一条「未分组」的旧记录，点右边按钮刷新即可消失。',
+        reload: '刷新页面',
+        reloadPage: '重新加载页面',
         errChildren: '这个对话还有 {n} 个分叉出来的子对话，请先删除它们。',
         errMissing: '这个对话已经不存在了。',
         errNotAttached: '这个对话不属于任何工作区，不需要收起。',
@@ -107,8 +108,9 @@ window.__ModuleLoader__.load({
         dismiss: 'Dismiss',
         authorLabel: 'By',
         errRunning: 'This conversation is running a turn (or waiting for your answer); stop it first.',
-        deleteDoneLive: 'Deleted “{name}”. If that conversation window is still open, refresh the page.',
-        deletedLiveHint: 'Deleted. If that conversation window is still open, refresh the page.',
+        deletedSidebarHint: 'Deleted. If the sidebar still shows it under Ungrouped, use the button on the right to refresh.',
+        reload: 'Refresh page',
+        reloadPage: 'Reload page',
         errChildren: 'This conversation has {n} forked child conversation(s); delete those first.',
         errMissing: 'That conversation no longer exists.',
         errNotAttached: 'That conversation belongs to no workspace, so there is nothing to tuck away.',
@@ -327,22 +329,20 @@ window.__ModuleLoader__.load({
               label: t('menuDeleteConfirmItem', { name: displayTitle }),
               danger: true,
               run: async () => {
-                let body = {}
                 try {
                   try {
                     await unarchive(sessionId)
                   } catch {}
-                  body = await post(API + '/delete', { sessionId })
+                  await post(API + '/delete', { sessionId })
                 } catch (problem) {
                   services.contextMenus.notify(describeError(problem))
                   return
                 }
-                services.contextMenus.notify(
-                  body.hadLiveOwner
-                    ? t('deleteDoneLive', { name: displayTitle })
-                    : t('deleteDone', { name: displayTitle }),
-                  true,
-                )
+                services.contextMenus.notify(t('deleteDone', { name: displayTitle }), true, {
+                  label: t('reload'),
+                  run: () => window.location.reload(),
+                  failureLabel: t('reload'),
+                })
               },
               failureLabel: t('menuDeleteFailed'),
             },
@@ -535,7 +535,7 @@ window.__ModuleLoader__.load({
           }
           setItems(rows)
           setError('')
-          setNotice('')
+          setNotice(null)
           setPhase('ready')
           try {
             const cards = await call(API + '/digests')
@@ -634,7 +634,7 @@ window.__ModuleLoader__.load({
           }
           await load()
         } catch (problem) {
-          setNotice(describeError(problem))
+          setNotice({ text: describeError(problem) })
         } finally {
           setBusy('')
         }
@@ -655,11 +655,11 @@ window.__ModuleLoader__.load({
               await unarchive(row.id)
             } catch {}
           }
-          const body = await post(API + '/delete', { sessionId: row.id })
+          await post(API + '/delete', { sessionId: row.id })
           await load()
-          if (body.hadLiveOwner) setNotice(t('deletedLiveHint'))
+          setNotice({ text: t('deletedSidebarHint'), action: { label: t('reload'), run: () => window.location.reload() } })
         } catch (problem) {
-          setNotice(describeError(problem))
+          setNotice({ text: describeError(problem) })
         } finally {
           setBusy('')
         }
@@ -674,7 +674,6 @@ window.__ModuleLoader__.load({
         })
         if (!ok) return
         setBusy('group:' + group.title)
-        let liveOwner = false
         try {
           for (const row of group.rows) {
             if (row.kind === 'archived') {
@@ -682,15 +681,14 @@ window.__ModuleLoader__.load({
                 await unarchive(row.id)
               } catch {}
             }
-            const body = await post(API + '/delete', { sessionId: row.id })
-            if (body.hadLiveOwner) liveOwner = true
+            await post(API + '/delete', { sessionId: row.id })
           }
         } catch (problem) {
-          setNotice(describeError(problem))
+          setNotice({ text: describeError(problem) })
         } finally {
           setBusy('')
           await load()
-          if (liveOwner) setNotice(t('deletedLiveHint'))
+          setNotice({ text: t('deletedSidebarHint'), action: { label: t('reload'), run: () => window.location.reload() } })
         }
       }
 
@@ -706,7 +704,7 @@ window.__ModuleLoader__.load({
           await post(API + '/digests/delete', { id: card.id })
           await load()
         } catch (problem) {
-          setNotice(describeError(problem))
+          setNotice({ text: describeError(problem) })
         }
       }
 
@@ -725,7 +723,7 @@ window.__ModuleLoader__.load({
           setEditingId('')
           await load()
         } catch (problem) {
-          setNotice(describeError(problem))
+          setNotice({ text: describeError(problem) })
         }
       }
 
@@ -828,7 +826,7 @@ window.__ModuleLoader__.load({
           setRenamingId('')
           await load()
         } catch (problem) {
-          setNotice(describeError(problem))
+          setNotice({ text: describeError(problem) })
         }
       }
 
@@ -961,10 +959,17 @@ window.__ModuleLoader__.load({
         ? h(
             'div',
             { className: 'dsv-picker dsv-notice' },
-            h('span', {}, notice),
+            h('span', {}, notice.text),
+            notice.action
+              ? h(
+                  'button',
+                  { type: 'button', className: 'dsv-btn', onClick: () => notice.action.run() },
+                  notice.action.label,
+                )
+              : null,
             h(
               'button',
-              { type: 'button', className: 'dsv-btn', onClick: () => setNotice('') },
+              { type: 'button', className: 'dsv-btn', onClick: () => setNotice(null) },
               t('dismiss'),
             ),
           )
@@ -1007,7 +1012,7 @@ window.__ModuleLoader__.load({
                     setPicker(null)
                     await load()
                   } catch (problem) {
-                    setNotice(describeError(problem))
+                    setNotice({ text: describeError(problem) })
                   } finally {
                     setBusy('')
                   }
@@ -1080,6 +1085,11 @@ window.__ModuleLoader__.load({
           'div',
           { className: 'dsv-tools' },
           h('button', { type: 'button', className: 'dsv-btn', onClick: load }, t('refresh')),
+          h(
+            'button',
+            { type: 'button', className: 'dsv-btn', onClick: () => window.location.reload() },
+            t('reloadPage'),
+          ),
         ),
         noticeNode,
         pickerNode,
