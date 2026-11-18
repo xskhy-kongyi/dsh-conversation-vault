@@ -1,6 +1,6 @@
 {
   "name": "dsh-conversation-vault",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Session vault for DeepSeek Harness: tuck conversations out of a workspace, manage archived ones in one panel, delete just the conversation log (never files), and distill long sessions into editable memory cards any later session can read. · 会话仓库：收起没用的对话、集中管理归档、只删对话不动文件，并把长对话蒸馏成可被后续会话读取的记忆卡。",
   "type": "module",
   "main": "index.js",

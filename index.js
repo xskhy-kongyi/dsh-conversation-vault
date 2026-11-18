@@ -27,7 +27,7 @@ const HARNESS_HOME = process.env.DSH_HOME || join(homedir(), '.dsh')
 const DATA_DIR = join(HARNESS_HOME, 'storages', 'session-vault')
 const CARD_DIR = join(DATA_DIR, 'cards')
 
-export const inject = ['webServer', 'workspaceRegistry', 'sessionPersistence', 'tools']
+export const inject = ['webServer', 'workspaceRegistry', 'sessionPersistence', 'tools', 'connection']
 
 function sendJson(response, status, body) {
   response.writeHead(status, {
@@ -542,8 +542,23 @@ export function apply(ctx) {
     ].join('\n')
   }
 
-  function route(path, handler) {    ctx.effect(() => {
-      const dispose = ctx.webServer.register({ kind: 'exact', path, handler })
+  function route(path, handler) {
+    // These routes are served by webServer, not by Connection's own /api mount, so
+    // they get none of its trust checks for free: without this an arbitrary web page
+    // in the browser could POST to the delete route on loopback. Refuse anything
+    // Connection would refuse (bad Host/Origin, no authenticated browser peer).
+    const guarded = (request, response) => {
+      const refusal = ctx.connection.requestRejection(request)
+      if (refusal !== undefined) {
+        response.statusCode = refusal
+        response.setHeader('content-type', 'application/json; charset=utf-8')
+        response.end(JSON.stringify({ ok: false, error: refusal === 401 ? 'unauthorized' : 'forbidden' }))
+        return
+      }
+      return handler(request, response)
+    }
+    ctx.effect(() => {
+      const dispose = ctx.webServer.register({ kind: 'exact', path, handler: guarded })
       return () => {
         if (typeof dispose === 'function') dispose()
       }
